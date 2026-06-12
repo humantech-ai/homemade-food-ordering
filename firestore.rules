@@ -1,0 +1,189 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- REUSABLE SECURITY PRIMITIVES ---
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isSuperAdmin() {
+      return isEmailVerified() && request.auth.token.email == "edutechsa55@gmail.com";
+    }
+
+    function isAdmin() {
+      return isEmailVerified() && (
+        isSuperAdmin() || 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isNumber(val) {
+      return val is int || val is float;
+    }
+
+    // --- COLLECTION VALIDATION SCHEMAS ---
+
+    function isValidCategory(data) {
+      return data.id is string && data.id.size() <= 100
+        && data.nameBn is string && data.nameBn.size() <= 100 && data.nameBn.size() > 0
+        && data.nameEn is string && data.nameEn.size() <= 100 && data.nameEn.size() > 0
+        && (!('descriptionBn' in data) || (data.descriptionBn is string && data.descriptionBn.size() <= 500))
+        && (!('descriptionEn' in data) || (data.descriptionEn is string && data.descriptionEn.size() <= 500))
+        && (!('isDeleted' in data) || data.isDeleted is bool)
+        && (!('price' in data) || (isNumber(data.price) && data.price >= 0));
+    }
+
+    function isValidMenuItem(data) {
+      return data.id is string && data.id.size() <= 100
+        && data.nameBn is string && data.nameBn.size() <= 150 && data.nameBn.size() > 0
+        && data.nameEn is string && data.nameEn.size() <= 150 && data.nameEn.size() > 0
+        && (!('descriptionBn' in data) || (data.descriptionBn is string && data.descriptionBn.size() <= 1000))
+        && (!('descriptionEn' in data) || (data.descriptionEn is string && data.descriptionEn.size() <= 1000))
+        && (!('image' in data) || (data.image is string && data.image.size() <= 2048))
+        && isNumber(data.regularPrice) && data.regularPrice >= 0
+        && (!('discountedPrice' in data) || (isNumber(data.discountedPrice) && data.discountedPrice >= 0))
+        && data.isAvailable is bool
+        && data.categoryId is string && data.categoryId.size() <= 100
+        && (!('isMostlyOrdered' in data) || data.isMostlyOrdered is bool)
+        && (!('isDeleted' in data) || data.isDeleted is bool);
+    }
+
+    function isValidOrder(data) {
+      return data.id is string && data.id.size() <= 100
+        && data.invoiceNumber is string && data.invoiceNumber.size() <= 50
+        && data.fullName is string && data.fullName.size() <= 100 && data.fullName.size() > 0
+        && data.phoneNumber is string && data.phoneNumber.size() <= 30 && data.phoneNumber.size() > 0
+        && data.fullAddress is string && data.fullAddress.size() <= 500 && data.fullAddress.size() > 0
+        && data.items is list && data.items.size() > 0 && data.items.size() <= 50
+        && isNumber(data.totalPrice) && data.totalPrice >= 0
+        && isNumber(data.deliveryCharge) && data.deliveryCharge >= 0
+        && data.paymentMethod is string && (data.paymentMethod == "bKash" || data.paymentMethod == "Cash on Delivery")
+        && (!('bKashNumber' in data) || (data.bKashNumber is string && data.bKashNumber.size() <= 20))
+        && (!('transactionId' in data) || (data.transactionId is string && data.transactionId.size() <= 50))
+        && data.status is string && (
+          data.status == "Pending" || 
+          data.status == "Hold" || 
+          data.status == "Accepted" || 
+          data.status == "Preparing" || 
+          data.status == "Out for Delivery" || 
+          data.status == "Delivered" || 
+          data.status == "Cancelled"
+        )
+        && (!('isDeleted' in data) || data.isDeleted is bool)
+        && (!('couponCode' in data) || (data.couponCode is string && data.couponCode.size() <= 128))
+        && (!('couponDiscount' in data) || (isNumber(data.couponDiscount) && data.couponDiscount >= 0))
+        && (!('shippingArea' in data) || (data.shippingArea is string && (data.shippingArea == "inside" || data.shippingArea == "outside")));
+    }
+
+    function isValidCoupon(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.offerName is string && data.offerName.size() <= 200 && data.offerName.size() > 0
+        && data.discountType is string && (data.discountType == "percentage" || data.discountType == "fixed")
+        && isNumber(data.discountValue) && data.discountValue >= 0
+        && (!('startDate' in data) || (data.startDate is string && data.startDate.size() <= 100))
+        && (!('endDate' in data) || (data.endDate is string && data.endDate.size() <= 100))
+        && data.isActive is bool
+        && (!('isDeleted' in data) || data.isDeleted is bool)
+        && data.applicability is string && (data.applicability == "all" || data.applicability == "specific")
+        && (!('applicableProductIds' in data) || (data.applicableProductIds is list && data.applicableProductIds.size() <= 200));
+    }
+
+    function isValidAdmin(data) {
+      return data.uid is string && data.uid.size() <= 128
+        && data.email is string && data.email.size() <= 150
+        && data.role is string && (data.role == "super_admin" || data.role == "operator")
+        && data.permissions is list && data.permissions.size() <= 20
+        && (!('isDeleted' in data) || data.isDeleted is bool);
+    }
+
+    function isValidSiteConfig(data) {
+      return data.id is string
+        && isNumber(data.deliveryChargeInside) && data.deliveryChargeInside >= 0
+        && isNumber(data.deliveryChargeOutside) && data.deliveryChargeOutside >= 0
+        && data.bKashNumber is string && data.bKashNumber.size() <= 20
+        && (!('bKashQrUrl' in data) || (data.bKashQrUrl is string && data.bKashQrUrl.size() <= 2048))
+        && (!('bannerBn' in data) || (data.bannerBn is string && data.bannerBn.size() <= 1000))
+        && (!('bannerEn' in data) || (data.bannerEn is string && data.bannerEn.size() <= 1000))
+        && (!('whatsappNumber' in data) || (data.whatsappNumber is string && data.whatsappNumber.size() <= 20));
+    }
+
+    function isValidActivityLog(data) {
+      return data.id is string && data.id.size() <= 100
+        && data.adminEmail is string && data.adminEmail.size() <= 150
+        && data.action is string && data.action.size() <= 300
+        && (!('details' in data) || (data.details is string && data.details.size() <= 5000));
+    }
+
+
+    // --- SECURITY RULE BLOCKS ---
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() && isValidCategory(incoming());
+    }
+
+    match /menuItems/{menuItemId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() && isValidMenuItem(incoming());
+    }
+
+    match /orders/{orderId} {
+      // Secure Tracking constraint: general harvesting (listing) is forbidden for citizens, but admins can query
+      allow list: if isAdmin();
+      // Customers can fetch their specific invoice if they possess the correct cryptographically safe orderId
+      allow get: if true;
+      // All orders must start as Pending when created by clients
+      allow create: if isValidOrder(incoming()) && incoming().status == "Pending";
+      // Only administrators can edit / process orders
+      allow update: if isAdmin() && isValidOrder(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /admins/{adminId} {
+      allow read, list: if isAdmin();
+      // Only the verified root super_admin accounts can register / modify admins
+      allow create, update, delete: if isSuperAdmin() && isValidAdmin(incoming());
+    }
+
+    match /siteConfig/{configId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() && isValidSiteConfig(incoming());
+    }
+
+    match /activityLogs/{logId} {
+      allow read, list: if isAdmin();
+      allow create: if isAdmin() && isValidActivityLog(incoming());
+      allow update, delete: if false;
+    }
+
+    match /coupons/{couponId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidCoupon(incoming());
+      allow delete: if isAdmin();
+    }
+
+  }
+}

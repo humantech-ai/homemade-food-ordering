@@ -1,0 +1,6 @@
+{
+  "name": "Homemade Food Ordering",
+  "description": "A premium, mobile-first homemade food ordering platform with a minimalist UI, featuring easy Bengali/English localization, direct order submission, instant invoices, safe order tracking, and a comprehensive admin control panel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

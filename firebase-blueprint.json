@@ -1,0 +1,152 @@
+{
+  "entities": {
+    "category": {
+      "title": "Category",
+      "description": "A food category bn/en",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique category id" },
+        "nameBn": { "type": "string", "description": "Category name in Bangla" },
+        "nameEn": { "type": "string", "description": "Category name in English" },
+        "descriptionBn": { "type": "string", "description": "Category description in Bangla" },
+        "descriptionEn": { "type": "string", "description": "Category description in English" },
+        "isDeleted": { "type": "boolean", "description": "Soft delete indicator" }
+      },
+      "required": ["id", "nameBn", "nameEn"]
+    },
+    "menuItem": {
+      "title": "MenuItem",
+      "description": "A homemade food item in the menu",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique menu item ID" },
+        "nameBn": { "type": "string", "description": "Food name in Bangla" },
+        "nameEn": { "type": "string", "description": "Food name in English" },
+        "descriptionBn": { "type": "string", "description": "Food description in Bangla" },
+        "descriptionEn": { "type": "string", "description": "Food description in English" },
+        "image": { "type": "string", "description": "Food card image URL" },
+        "regularPrice": { "type": "number", "description": "Regular price in BDT" },
+        "discountedPrice": { "type": "number", "description": "Discounted price in BDT if any" },
+        "isAvailable": { "type": "boolean", "description": "Availability status" },
+        "categoryId": { "type": "string", "description": "Reference category ID" },
+        "isDeleted": { "type": "boolean", "description": "Soft delete flag" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "nameBn", "nameEn", "regularPrice", "isAvailable", "categoryId"]
+    },
+    "order": {
+      "title": "Order",
+      "description": "An order submitted by a customer",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique random order ID" },
+        "invoiceNumber": { "type": "string", "description": "Randomized non-sequential invoice number" },
+        "fullName": { "type": "string", "description": "Customer full name" },
+        "phoneNumber": { "type": "string", "description": "Customer mobile phone number" },
+        "fullAddress": { "type": "string", "description": "Customer location delivery address" },
+        "items": { "type": "array", "description": "List of ordered items with prices and quantities" },
+        "totalPrice": { "type": "number", "description": "Subtotal price of items in BDT (after coupon discount)" },
+        "deliveryCharge": { "type": "number", "description": "Advance delivery charge paid or required in BDT" },
+        "paymentMethod": { "type": "string", "description": "bKash or Cash on Delivery" },
+        "bKashNumber": { "type": "string", "description": "bKash phone number of payment" },
+        "transactionId": { "type": "string", "description": "bKash txn ID" },
+        "status": { "type": "string", "enum": ["Pending", "Hold", "Accepted", "Preparing", "Out for Delivery", "Delivered", "Cancelled"], "description": "Ordering processing status" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "isDeleted": { "type": "boolean", "description": "Soft delete status" },
+        "couponCode": { "type": "string", "description": "Dynamic coupon promo code applied to this purchase" },
+        "couponDiscount": { "type": "number", "description": "Discount value in BDT applied to the subtotal" }
+      },
+      "required": ["id", "invoiceNumber", "fullName", "phoneNumber", "fullAddress", "items", "totalPrice", "deliveryCharge", "paymentMethod", "status"]
+    },
+    "coupon": {
+      "title": "Coupon",
+      "description": "A dynamic coupon code for enabling items discount",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Code string in uppercase (e.g. SPECIAL30)" },
+        "offerName": { "type": "string", "description": "Name of the discount offer" },
+        "discountType": { "type": "string", "enum": ["percentage", "fixed"], "description": "Percentage or flat reduction" },
+        "discountValue": { "type": "number", "description": "Value of discount (percentage or fixed cash)" },
+        "startDate": { "type": "string", "description": "Start date for coupon validity" },
+        "endDate": { "type": "string", "description": "End date for coupon validity" },
+        "isActive": { "type": "boolean", "description": "Active activation toggle status" },
+        "isDeleted": { "type": "boolean", "description": "Soft deletion status" },
+        "applicability": { "type": "string", "enum": ["all", "specific"], "description": "Discount all items or specific dishes" },
+        "applicableProductIds": { "type": "array", "description": "Specific menu items IDs under coupon discount" }
+      },
+      "required": ["id", "offerName", "discountType", "discountValue", "isActive", "applicability"]
+    },
+    "admin": {
+      "title": "Admin",
+      "description": "An administrator or operator user profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "FirebaseAuth user UID" },
+        "email": { "type": "string", "description": "User email address" },
+        "role": { "type": "string", "enum": ["super_admin", "operator"], "description": "Access level role" },
+        "permissions": { "type": "array", "description": "Array of specific permitted activity codes" },
+        "isDeleted": { "type": "boolean", "description": "Soft delete indicator" }
+      },
+      "required": ["uid", "email", "role", "permissions"]
+    },
+    "siteConfig": {
+      "title": "SiteConfig",
+      "description": "Global custom configurations for pricing, phone number and banners",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Document ID" },
+        "deliveryChargeInside": { "type": "number", "description": "Delivery charge inside Dhaka / local area" },
+        "deliveryChargeOutside": { "type": "number", "description": "Delivery charge outside Dhaka / local area" },
+        "bKashNumber": { "type": "string", "description": "bKash Merchant/Personal phone number for payments" },
+        "bKashQrUrl": { "type": "string", "description": "bKash QR code logo image" },
+        "bannerBn": { "type": "string", "description": "Banner message in Bangla" },
+        "bannerEn": { "type": "string", "description": "Banner message in English" },
+        "whatsappNumber": { "type": "string", "description": "Whatsapp integration contact number" }
+      },
+      "required": ["id", "deliveryChargeInside", "deliveryChargeOutside", "bKashNumber"]
+    },
+    "activityLog": {
+      "title": "ActivityLog",
+      "description": "Audit trails for administrator actions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Log ID" },
+        "adminEmail": { "type": "string", "description": "Logged-in administrator email" },
+        "action": { "type": "string", "description": "General description of action performed" },
+        "details": { "type": "string", "description": "In-depth logs of modified content" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "adminEmail", "action", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/categories/{categoryId}": {
+      "schema": "category",
+      "description": "Homemade food categories info list"
+    },
+    "/menuItems/{menuItemId}": {
+      "schema": "menuItem",
+      "description": "Menu dishes and homemade foods catalog"
+    },
+    "/orders/{orderId}": {
+      "schema": "order",
+      "description": "Customer order transactions"
+    },
+    "/admins/{adminId}": {
+      "schema": "admin",
+      "description": "Permissioned administrative profiles"
+    },
+    "/siteConfig/{configId}": {
+      "schema": "siteConfig",
+      "description": "Site global configurations"
+    },
+    "/activityLogs/{logId}": {
+      "schema": "activityLog",
+      "description": "Auditable event records"
+    },
+    "/coupons/{couponId}": {
+      "schema": "coupon",
+      "description": "Dynamic promo discount coupons"
+    }
+  }
+}
