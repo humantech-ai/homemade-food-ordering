@@ -8,25 +8,3 @@
   "messagingSenderId": "246812014272",
   "measurementId": "G-6LT7TNWGKL"
 }
-
-// import { initializeApp } from "firebase/app";
-// import { initializeFirestore } from "firebase/firestore";
-
-// // Your standard Firebase configuration object
-// const firebaseConfig = {
-//   apiKey: "AIzaSyCOqprAGPP12JinWnjeuanOfZJoXE1Pcr0", // Secure this key in Google Cloud Console!
-//   authDomain: "homemade-food-kitchen-prod.firebaseapp.com",
-//   projectId: "homemade-food-kitchen-prod",
-//   storageBucket: "homemade-food-kitchen-prod.firebasestorage.app",
-//   messagingSenderId: "246812014272",
-//   appId: "1:246812014272:web:aecdb1311568f538f31f25",
-//   measurementId: "G-6LT7TNWGKL"
-// };
-
-// // Initialize Firebase Core
-// const app = initializeApp(firebaseConfig);
-
-// // Initialize Firestore explicitly specifying the database ID
-// const db = initializeFirestore(app, {
-//   databaseId: '(default)' // If you use the default database, you can also just use getFirestore(app)
-// });
